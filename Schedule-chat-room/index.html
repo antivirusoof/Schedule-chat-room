@@ -1,0 +1,191 @@
+<html>
+   <head>
+      <title> ChatRoom</title>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+      <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+      <script src='/socket.io/socket.io.js'> </script>          
+   </head>
+   <style>
+      .imgcontainer {
+      text-align: center;
+      margin: 24px 0 12px 0;
+      }
+      img.avatar {
+      width: 40%;
+      border-radius: 50%;
+      }
+       
+      button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 14px 20px;
+      margin: 8px 0;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+      }
+      body{
+      margin-top: 40px;
+      }
+      #messageArea
+      {
+      display:none;
+      }
+       
+      #Activeuser{
+      font-size:20px;
+      color:green;
+      } 
+       .time-right {
+    float: right;
+    color: #aaa;
+           
+} 
+       ul{
+           height:400px;
+           width:*;
+           overflow:hidden;
+           overflow-y:scroll;}
+       
+    
+       .chat{
+           height:300px;
+             overflow:hidden;
+           overflow:auto;
+           position: relative;
+       }
+    
+    
+    
+    </style>
+   <body>
+       <div ><I><u>Dont give date for instant chatting happy chatting  ;)</u></I></div>
+      <div align="center">
+         <h2> Schedule Chat Room</h2>
+      </div>
+      <br />
+      <div class="container">
+         <div id="userFormArea" class="row">
+            <div class="col-md-4"></div>
+            <div class="col-md-6">
+               <div class="imgcontainer">
+                  <img src="Avatar.png" alt="Avatar" class="avatar" \>
+               </div>
+               <form id="UserForm">
+                  <div class="form-group">
+                     <label>Enter UserName</label>
+                     <input id="username" class="form-control" required/>
+                     <br/>
+                     <button type="submit">Login</button>
+                  </div>
+               </form>
+            </div>
+         </div>
+         <div class="row" id="messageArea">
+            <div class="col-md-5">
+               <div style="overflow:auto;" class="well well-sm">
+                  <h3>Online Users</h3>
+                  <ul class="list-group-item" id="ActiveUser"></ul>
+               </div>
+            </div>
+            <div class="col-md-7">
+               <div class="chat" id="chatarea"></div>
+                
+               <form id="messageForm">
+                  <div class="form-group">
+                     <label>Enter your message bellow</label>
+                     <textarea class="form-control" id="message"  required></textarea>
+                     <br/>
+                     <label>Enter message with time</label>
+                     <input class="well" id="time" type="datetime-local">
+                      <label id="error" style="color:red;"></label><br/>
+                     <input  type="submit" class="btn btn-primary" value="Qmessage"/>
+                  </div>
+               </form>
+            </div>
+         </div>
+      </div>
+      <script>
+         $(function(){
+             var socket=io.connect();
+             var $messageForm=$('#messageForm');
+             var $message = $('#message');
+             var $chatarea = $('#chatarea');
+             var $time = $('#time');
+             var $UserFormArea = $('#userFormArea');
+             var $username = $('#username');
+             var $messageArea = $('#messageArea');
+             var $ActiveUser = $('#ActiveUser'); 
+             var $UserForm = $('#UserForm');
+             var $curtim = $('#curtim');
+              var date=new Date();
+         
+             $messageForm.submit(function(e){
+                 e.preventDefault();
+                 $chatarea.scrollTop( $chatarea.height());
+                 console.log('message_submiited');
+                 var temp=$time.val();
+                 $('#error').text('');
+                 if(temp.length<=1)// instant chatting condidiotn
+                     temp='Avishek';
+                 if(temp!='Avishek')//wrong date handler
+                     {
+                         var date1=new Date(temp);
+                        
+                         var flag = date.getTime()>date1.getTime();
+                         
+                         if(flag==true)
+                             {
+                             $('#error').text("wrong date !");
+                                 return;
+                                
+                             }
+                         
+                     }
+                  if(temp!='Avishek')
+                   $('#error').text('Message queued');
+                 
+                 socket.emit('send message' , $message.val()+' '+temp);
+         
+                 $message.val('');
+                 $time.val(''); 
+         
+             });
+             socket.on('new message' , function(data){
+                 
+               timne=new Date();
+              $chatarea.append('<p class="well"><strong>'+data.username+' : </strong> '+data.msg+'<span class="time-right">'+timne.toString().substring(0,21)+'</span></p></br>');
+                
+                $('#chatarea').stop ().animate ({
+  scrollTop: $('#chatarea')[0].scrollHeight
+});
+                  clearInput();
+            
+             });
+             
+              $UserForm.submit(function(e){
+                 e.preventDefault();
+                  console.log('New user added');
+                  socket.emit('new user' , $username.val(),function(data){
+               if(data){
+                   $UserFormArea.hide();
+                          $messageArea.show();
+                                         }
+                                     });
+                                     $username.val('');
+                                 });
+             socket.on('get user', function(data){//Displaying Active user list
+                 var html = ''; 
+                 for(i = 0; i < data.length ;i++)
+                     html+='<li class="glyphicon glyphicon-user"  class="list-group-item"><strong>      '+data[i]+'</strong><\li>';
+                     $ActiveUser.html(html);
+             });
+         
+             });
+      </script>
+   </body>
+</html>
